@@ -5,7 +5,7 @@ import keyoraLogoWhite from "../assets/logo/keyora_logo_white.svg";
 
 const NavBar: React.FC = () => {
   const location = useLocation();
-  const isWhiteLogo = ["/login", "/upload"].includes(location.pathname.toLowerCase());
+  const isWhiteLogo = ["/", "/login", "/upload","/aasequence"].includes(location.pathname.toLowerCase());
   const logoSrc = isWhiteLogo ? keyoraLogoWhite : keyoraLogoStandard;
 
   return (

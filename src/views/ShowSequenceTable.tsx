@@ -10,7 +10,7 @@ import loadingIcon from "../assets/logo/loading.gif"
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function ImageCheck() {
+export default function ShowSequenceTable() {
   const user = auth.currentUser;
   const API_BASE = import.meta.env.VITE_API_BASE;
 
@@ -18,49 +18,43 @@ export default function ImageCheck() {
   const processResultRaw = sessionStorage.getItem("processResult");
   const processResult = processResultRaw ? JSON.parse(processResultRaw) : null;
 
-  // 2. Extract images + descriptions
-  const images = processResult
-    ? Object.values(processResult.data).map(item => item.signingURL)
-    : [];
-
   const initialDescriptions = processResult
     ? Object.values(processResult.data).map(item =>
-        item.description ?? item.sentences.join(" ")
+        item.description
       )
     : [];
 
-  // 3. Hook for state (if you want to update later)
-  const [imageList, setImageList] = useState(images);
-  const [loading, setLoading] = useState(false);
 
-  const [accepted, setAccepted] = useState<boolean[]>(
-    Array(images.length).fill(false)
-  );
+  const [loading, setLoading] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const allAccepted = accepted.every((a) => a);
+  const allAccepted = true;
 
-  // original state
-  const [descriptions, _setDescriptions] = useState<string[]>(initialDescriptions);
+    // join all descriptions into one string separated by newlines
+    const [descriptions, _setDescription] = useState<string>(
+      initialDescriptions.join("\n ")
+    );
 
-  // wrapper around setState
-  const setDescriptions = (updater: string[] | ((prev: string[]) => string[])) => {
-    _setDescriptions((prev) => {
-      const newDescs = typeof updater === "function" ? updater(prev) : updater;
+    // console.log("Descriptions:", descriptions);
+    // console.log("Length:", descriptions.length);
 
-      // persist to sessionStorage
-      if (processResult) {
+    const setDescription = (updater: string | ((prev: string) => string)) => {
+    _setDescription((prev) => {
+        const newDesc = typeof updater === "function" ? updater(prev) : updater;
+
+        // persist to sessionStorage
+        if (processResult) {
         const keys = Object.keys(processResult.data);
-        newDescs.forEach((desc, idx) => {
-          processResult.data[keys[idx]].description = desc;
-        });
+        if (keys.length > 0) {
+            processResult.data[keys[0]].description = newDesc;
+        }
         sessionStorage.setItem("processResult", JSON.stringify(processResult));
-      }
+        }
 
-      return newDescs;
+        return newDesc;
     });
-  };
+    };
 
   const handleAccept = () => {
     // ✅ a) update description (already in state)
@@ -82,43 +76,45 @@ const handleGenerate = async () => {
   setLoading(true);
   try {
     const uid = user?.uid;
+    const email = user?.email;
 
     // 🔹 Grab processData from sessionStorage
     const processDataRaw = sessionStorage.getItem("processResult");
     const image_sentence_map = processDataRaw ? JSON.parse(processDataRaw) : {};
 
-    // const res = await fetch(`${API_BASE}/generateInput`, {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     uid,
-    //     image_sentence_map,
-    //   }),
-    // });
-
-    // if (!res.ok) {
-    //   const err = await res.json();
-    //   alert(`Error: ${err.error}`);
-    //   setLoading(false);
-    //   return;
-    // }
-
-    // const data = await res.json();
-    // console.log("✅ generateInput success:", data);
-
-    // 🔹 Fire-and-forget: no await, no handling response
-    fetch(`${API_BASE}/generateInput`, {
+    const res = await fetch(`${API_BASE}/generateInput`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         uid,
+        email,
+        image_sentence_map,
       }),
     });
+
+    if (!res.ok) {
+      const err = await res.json();
+      alert(`Error: ${err.error}`);
+      setLoading(false);
+      return;
+    }
+
+    const data = await res.json();
+    console.log("✅ generateInput success:", data);
+
+    // 🔹 Fire-and-forget: no await, no handling response
+    // fetch(`${API_BASE}/generateInput`, {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({
+    //     uid,
+    //   }),
+    // });
 
     setLoading(false);
 
     // (Optional) store results in sessionStorage if you need them later
-    // sessionStorage.setItem("generateInputResult", JSON.stringify(data));
+    sessionStorage.setItem("generateInputResult", JSON.stringify(data));
     navigate("/Generating");
 
   } catch (err) {
@@ -189,7 +185,7 @@ return (
   }}
 >
   <img
-    src={images[currentIndex]}
+    // src={images[currentIndex]}
     alt={`Image ${currentIndex + 1}`}
     style={{
       width: "100%",
@@ -233,8 +229,8 @@ return (
 
       {/* Scrollable editable textbox */}
       <textarea
-          value={descriptions[currentIndex]}
-          disabled={accepted[currentIndex]} // ✅ b) disable if accepted
+          value={descriptions}
+          disabled={allAccepted} // or some other global flag
           onChange={(e) => {
             const newDescs = [...descriptions];
             newDescs[currentIndex] = e.target.value;
@@ -257,19 +253,20 @@ return (
       />
 
       {/* Accept button */}
-      +
       <div
-        onClick={!accepted[currentIndex] ? handleAccept : undefined}
+        onClick={allAccepted ? handleAccept : undefined}
         style={{
           width: "100%",
           height: "50px",
-          backgroundImage: `url(${accepted[currentIndex] ? acceptButtonDisabledBg : acceptButtonBg})`,
+          backgroundImage: `url(${allAccepted ? acceptButtonDisabledBg : acceptButtonBg})`,
           backgroundRepeat: "no-repeat",
           backgroundSize: "100% 100%",
           backgroundPosition: "center",
-          cursor: accepted[currentIndex] ? "not-allowed" : "pointer",
+          cursor: allAccepted ? "not-allowed" : "pointer",
         }}
       />
+
+        {/* Navigation buttons */}
     </div>
     </div>
     </div>    
@@ -284,68 +281,7 @@ return (
       }}
     >
       {/* Background div */}
-      <div
-        style={{
-          width: "300px",        // adjust width
-          height: "60px",        // adjust height
-          backgroundImage: `url(${figureNavbarBg})`,
-          backgroundRepeat: "no-repeat",
-          // backgroundSize: "100% 100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}
-      >
-        {/* Left button */}
-        <img
-          src={arrowleftBg}
-          alt="Previous"
-          onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-          style={{
-            position: "absolute",
-            left: "18px",
-            top: "15px",
-            width: "24px",
-            height: "24px",
-            opacity: currentIndex === 0 ? 0.3 : 1, // dim if disabled
-            cursor: currentIndex === 0 ? "not-allowed" : "pointer",
-          }}
-        />
-
-        {/* Center text */}
-        <span
-          style={{
-            fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif',
-            fontWeight: 500,
-            fontSize: "18px",
-            color: "#333",
-            marginTop: "-4px",   // 👈 nudge upwards
-            marginLeft: "-4px"
-          }}
-        >
-          Image {currentIndex + 1} of {images.length}
-        </span>
-
-        {/* Right button */}
-        <img
-          src={arrowrightBg}
-          alt="Next"
-          onClick={() =>
-            setCurrentIndex((i) => Math.min(images.length - 1, i + 1))
-          }
-          style={{
-            position: "absolute",
-            right: "27px",
-            top: "15px",
-            width: "24px",
-            height: "24px",
-            opacity: currentIndex === images.length - 1 ? 0.3 : 1,
-            cursor:
-              currentIndex === images.length - 1 ? "not-allowed" : "pointer",
-          }}
-        />
-      </div>
+    
     </div>
 
       {/* d) Generate button appears only after all accepted */}

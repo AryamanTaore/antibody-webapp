@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, auth } from "../firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
@@ -9,12 +9,15 @@ import step3Icon from "../assets/steps/Step 3.svg";
 import textboxLoginBg from "../assets/textbox_login.svg";
 import eyeIcon from "../assets/eye.svg"; // 👈 your eye icon
 import signinBg from "../assets/signin_button.svg";
+import ForgotPassword from "../views/forgotPassword"
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string|null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [modalState, setModalState] = useState<"input" | "success">("input");
 
   const navigate = useNavigate();
 
@@ -24,24 +27,36 @@ export default function Login() {
     try {
       await login(email, password);
       navigate("/Upload");
+      // navigate("/AASequence");
+      //navigate("/SeqGenerator");
+      //navigate("/Generating");
     } catch (err: any) {
       setError(err.message);
     }
   };
+  
+  useEffect(() => {
+    const remembered = localStorage.getItem("rememberMe") === "true";
+    const savedEmail = localStorage.getItem("userEmail");
 
+    if (remembered && savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      setError("Please enter your email to reset your password.");
-      return;
-    }
-    try {
-      await sendPasswordResetEmail(auth, email);
-      alert("Password reset email sent!");
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
+  const handleSendResetEmail = async (email: string) => {
+  if (!email) {
+    setError("Please enter your email to reset your password.");
+    return;
+  }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    setModalState("success");
+  } catch (err: any) {
+    setError(err.message);
+  }
+};
 
   return (
     <div style={{ height: "100vh", position: "relative" }}>
@@ -63,12 +78,13 @@ export default function Login() {
           flexDirection: "column",
           justifyContent: "flex-start",
           paddingTop: "15vh",
+          fontFamily: "Inter"
         }}
       >
-        <h1 className="heading-xl">GENERATE A PATENT APPLICATION IN 3 EASY STEPS</h1>
+        <h1 className="heading-xl">GENERATE A <br /> PATENT APPLICATION <br />IN 3 EASY STEPS</h1>
         <div
           className="paragraph-xl"
-          style={{ marginRight: "2rem", lineHeight: "1.6" }}
+          style={{ marginRight: "2rem", lineHeight: "1.6", fontSize: "48"}}
         >
           <p>
             <img
@@ -184,7 +200,8 @@ export default function Login() {
             <img
               src={eyeIcon}
               alt="Toggle password visibility"
-              onClick={() => setShowPassword(!showPassword)}
+              className = "button-hover"
+              onClick={() => setShowPassword((prev) => !prev)}
               style={{
                 position: "absolute",
                 right: "16px",
@@ -196,14 +213,10 @@ export default function Login() {
               }}
             />
           </div>
-
-          
-
-          {/* Remember me + forgot password */}
-                    
-                  
+          {/* Remember me + forgot password */}        
           <span
-            onClick={handleForgotPassword}
+            className = "button-hover"
+            onClick={() => setShowForgotModal(true)}
             style={{
               color: "#007bff",
               cursor: "pointer",
@@ -221,12 +234,16 @@ export default function Login() {
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
             />
-            Remember this device
+            Remember my email 
           </label>
 
-
-          {error && <p style={{ color: "red" }}>{error}</p>}
-
+          {/* {error && <p style={{ color: "red" }}>{error}</p>} */}
+          
+          {error && (
+            <p style={{ color: "red" }}>
+              Invalid credentials, try again.
+            </p>
+          )}
           {/* Sign in button */}
           <div
             style={{
@@ -247,6 +264,7 @@ export default function Login() {
             <div
               role="button"
               tabIndex={0}
+              className = "button-hover"
               onClick={handleSubmit}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
               style={{
@@ -261,6 +279,20 @@ export default function Login() {
             {/* Hidden button for Enter */}
             <button type="submit" style={{ display: "none" }}></button>
           </div>
+          <ForgotPassword
+              isOpen={showForgotModal}
+              onClose={() => {
+                setShowForgotModal(false);
+                setModalState("input");
+                setError(null);
+              }}
+              onSendReset={handleSendResetEmail}
+              email={email}
+              setEmail={setEmail}
+              error={error}
+              modalState={modalState}
+              setModalState={setModalState}
+            />
         </form>
       </div>
     </div>

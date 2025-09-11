@@ -1,0 +1,70 @@
+{
+  "hash": "f9c68d25",
+  "configHash": "0b930a3e",
+  "lockfileHash": "a9e62ffa",
+  "browserHash": "a7ea552a",
+  "optimized": {
+    "react": {
+      "src": "../../../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "86db6241",
+      "needsInterop": true
+    },
+    "react-dom": {
+      "src": "../../../../node_modules/react-dom/index.js",
+      "file": "react-dom.js",
+      "fileHash": "cc976c1f",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "a80cf0d8",
+      "needsInterop": true
+    },
+    "react/jsx-runtime": {
+      "src": "../../../../node_modules/react/jsx-runtime.js",
+      "file": "react_jsx-runtime.js",
+      "fileHash": "227a7c7f",
+      "needsInterop": true
+    },
+    "firebase/app": {
+      "src": "../../../../node_modules/firebase/app/dist/esm/index.esm.js",
+      "file": "firebase_app.js",
+      "fileHash": "b5046df2",
+      "needsInterop": false
+    },
+    "firebase/auth": {
+      "src": "../../../../node_modules/firebase/auth/dist/esm/index.esm.js",
+      "file": "firebase_auth.js",
+      "fileHash": "546bc565",
+      "needsInterop": false
+    },
+    "react-dom/client": {
+      "src": "../../../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "80fe137e",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "5353ad47",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-6HWKZJJ7": {
+      "file": "chunk-6HWKZJJ7.js"
+    },
+    "chunk-5SSM5YC5": {
+      "file": "chunk-5SSM5YC5.js"
+    },
+    "chunk-RPZUIW5Z": {
+      "file": "chunk-RPZUIW5Z.js"
+    },
+    "chunk-5WRI5ZAA": {
+      "file": "chunk-5WRI5ZAA.js"
+    }
+  }
+}

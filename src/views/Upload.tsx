@@ -1,5 +1,5 @@
 import { auth, logout } from "../firebase";
-import { useNavigate } from "react-router-dom";
+import { data, useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import uploadBg from "../assets/upload.svg";
 import fileUploadingBg from "../assets/fileProgress_uploading.svg";
@@ -7,13 +7,16 @@ import fileCompletedBg from "../assets/fileProgress_complete.svg";
 import generateDisabled from "../assets/generate_disabled.svg";
 import generateEnabled from "../assets/generate_enabled.svg";
 import checkIcon from "../assets/check.png";
-
+import LoadingIcon from "../components/LoadingIcon"; // adjust path as needed
 import { useRef, useState } from "react";
 
 export default function Upload() {
   const user = auth.currentUser;
-  const navigate = useNavigate();
+  console.log(user)
+  const API_BASE = import.meta.env.VITE_API_BASE;
 
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -31,7 +34,7 @@ export default function Upload() {
     }
   };
 
-  const handleFile = (f: File) => {
+  const handleFile = async (f: File) => {
     if (!f.name.endsWith(".docx")) {
       alert("Only .docx files are allowed.");
       return;
@@ -40,11 +43,103 @@ export default function Upload() {
     setStatus("uploading");
 
     // fake upload simulation
-    setTimeout(() => setStatus("done"), 1500);
+    // setTimeout(() => setStatus("done"), 1500);
+
+      // instead of fake timeout → call Firebase Function
+    try {
+      const formData = new FormData();
+      formData.append("file", f);
+
+
+      const res = await fetch(`${API_BASE}/upload_docs?uid=${user?.uid || "anonymous"}`, {
+          method: "POST",
+          body: formData,
+        });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      const data = await res.json();
+      console.log("Uploaded path:", data.path);
+      sessionStorage.setItem("inventionDocPath", data.path);
+      setStatus("done");
+    } catch (err) {
+      console.error("Upload failed", err);
+      setStatus(null);
+    }
+
+  };
+
+  const handleGenerate = async () => {
+    if (!file || !sessionStorage.getItem("inventionDocPath")) {
+      alert("Please upload a file first.");
+      return;
+    }
+
+    setLoading(true); // show loader
+    try {
+      const uid = user?.uid; // 👈 from Firebase Auth
+      const res = await fetch(
+        `${API_BASE}/getSequence?uid=${uid}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(`Error: ${err.error}`);
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      console.log("Process result:", data);
+
+      // Store result in sessionStorage
+      sessionStorage.setItem("processResult", JSON.stringify(data));
+
+      // Navigate
+      if (data["success"] === false) {
+        navigate("/AASequence");
+      } else {
+        navigate("/SeqGenerator");
+      }
+     
+    } catch (err) {
+      console.error("Process failed", err);
+      alert("Processing failed, please try again.");
+    } finally {
+      console.log('complete')
+      setLoading(false);
+    }
   };
 
   return (
+    
     <div style={{ height: "100vh", position: "relative"}}>
+
+    {/* ✅ Overlay goes here */}
+        {loading && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "white", // or semi-transparent like 'rgba(255,255,255,0.8)'
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999, // Must be higher than anything else on the page
+              pointerEvents: "auto", // Block user interaction
+            }}
+          >
+            <LoadingIcon/>
+          </div>
+        )}
+
       {/* Navbar overlays at the top, doesn’t consume flex space */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 }}>
         <NavBar />
@@ -221,11 +316,7 @@ export default function Upload() {
           
         {/* Generate button */}
         <div
-          onClick={() => {
-            if (file) {
-              navigate("/ImageCheck");   // 👈 only navigate if a file is loaded
-            }
-          }}
+          onClick={handleGenerate}
           style={{
             width: "300px",
             height: "80px",

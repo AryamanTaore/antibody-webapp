@@ -40,3 +40,34 @@
 .read-the-docs {
   color: #888;
 }
+
+.spinner {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #007bff; /* blue accent */
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+input::placeholder,
+textarea::placeholder {
+  font-family: "Body base"; /* or your token */
+  font-size: 16px;
+  color: #7d7f86; /* optional */
+}
+
+/* button hover effect */
+.button-hover{
+  transition: filter 0.3s ease;
+}
+
+.button-hover:hover {
+   filter: brightness(0.85); /* darkens the button */
+}
+

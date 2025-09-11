@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@rive-app/canvas": "^2.31.5",
+    "@rive-app/react-canvas": "^4.23.3",
+    "docx": "^9.5.1",
     "firebase": "^12.1.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
